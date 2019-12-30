@@ -9,8 +9,8 @@ def get_random_relative_prime(phi_n):
 
 # generate keys, returns (e, d, n)
 def rsa():
-  p = 23
-  q = 7
+  p = 47
+  q = 71
   phi_n = (q-1) * (p-1)
   e = get_random_relative_prime(phi_n)
   (_, d, _) = extended_euclid(e, phi_n)
@@ -18,28 +18,32 @@ def rsa():
     d = d % phi_n
   if d == e:
     return rsa()
-  return (e, d , q*p)
+  n = q*p
+  return ((e, n), (d, n))
 
-def encrypt(message, e, n):
-  while message > 0:
-    m_part = message % (n-1)
-    c_part =  (m_part ** e ) % n
-    yield c_part
-    message = int(message/(n-1))
+def encrypt(message, public_key):
+  (e, n) = public_key
+  ciphertext = ""
+  for c in message:
+    ciphertext += chr((ord(c) ** e ) % n)
+  return ciphertext
 
-def decrypt(c_parts, d, n):
-  i = 0
-  result = 0
-  for c_part in c_parts:
-    m_part = (c_part ** d) % n
-    result += m_part * ((n-1)**i)
-    i+=1
-  return result
+def decrypt(ciphertext, private_key):
+  (d, n) = private_key
+  message = ""
+  for c in ciphertext:
+    message += chr((ord(c) ** d) % n)
+  return message
 
-e, d, n = rsa()
-print(e, d, n)
+public_key, private_key = rsa()
 
-m = 1234567890
-ciphertext = list(encrypt(m, e, n))
-recovered_m = decrypt(ciphertext, d, n)
-print(m, ciphertext, recovered_m)
+m = "Hello, World!"
+ciphertext = encrypt(m, public_key)
+recovered_m = decrypt(ciphertext, private_key)
+
+import base64
+
+print("public key:", public_key[0], "private key:", private_key[0])
+print("input:", m)
+print("encrypted:", (base64.b64encode(str.encode(ciphertext))))
+print("decrypted:", recovered_m)
